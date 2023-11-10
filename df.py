@@ -1,15 +1,25 @@
 #!/usr/bin/python3
 
+import getch
+import os
 import random
 import textwrap
 import time
 
+clear = lambda: os.system('clear')
+
 def main() :
-  gameStart()
+  player, playerWeapon, startingRoom = gameStart()
+  action, player = playerInput(player)
+  print(action)
+  while True:
+   # clear()
+    action, player = playerInput(player)
+    print(action)
+    # get player input, usually directional change
 
 # variables
 startMessage = "\n  This begins your perilous delve into the DARK FORT.\n\n     THE CATACOMB ROGUE enters the stage\n\n"
-
 
 startingWeapons =  {
   'warhammer' : { 'damageDie' : 6, 'damageBonus' : 0, 'attackBonus' : 0 }, 
@@ -37,8 +47,8 @@ weakMonsters = {
   }
 
 roomShapes = [ 
-  'null', 'Oval', 'Irregular Cave', 'Cross-shaped', 'Corridor','Square',
-  'Square', 'Square', 'Round', 'Rectangular', 'Triangular', 'Skull-shaped'
+  'null', 'oval', 'irregular cave', 'cross-shaped', 'corridor','square',
+  'square', 'square', 'round', 'rectangular', 'triangular', 'skull-shaped'
   ]
 
 doorCount = [ 'no doors, a dead end', 'one door', 'two doors', 'two doors', 'three doors']
@@ -48,6 +58,8 @@ doorPosition = [ 'North', 'South', 'East', 'West' ]
 class Player:
   def __init__(self,name):
     self.name = name
+    self.xPos = 0 
+    self.yPos = 0
     self.level = 1
     self.hitPoints = 15
     self.silver = 15 + diceRoll(1,6)
@@ -73,17 +85,18 @@ class Weapon:
 
 
 class Room:
-  def __init__(self, roomNumber, xPos, yPos, item, monster, scroll, doors):
+  def __init__(self, roomNumber, xPos, yPos, shape, item, monster, scroll, doors):
     self.roomNumber = roomNumber
     self.xPos = xPos
     self.yPos = yPos
+    self.shape = shape
     self.item = item
     self.monster = monster
     self.scroll = scroll
     self.doors = doors
 
   def entranceDescription(self):
-    message = '\nYou enter a room with ' + self.doors
+    message = '\nYou enter a ' + self.shape + ' room with ' + self.doors
     if self.scroll:
       message = message + ' and a dying mystic gives you a scroll of ' + self.scroll
     elif self.item:
@@ -103,6 +116,8 @@ class Room:
     monster = ''
     scroll = ''
     doors = doorCount[diceRoll(1,4)]
+    shapeRoll = diceRoll(2, 6)
+    shape = roomShapes[shapeRoll]
     contentsRoll = int(diceRoll(1, 4) - 1)
     entranceResult = entranceContents[contentsRoll]
     if entranceResult == 'item':
@@ -116,7 +131,7 @@ class Room:
     if entranceResult == 'scroll':
       scrollRoll = int(diceRoll(1,4) - 1)
       scroll = sorted(scrolls)[scrollRoll]
-    return 1, 0, 0, item, monster, scroll, doors
+    return 1, 0, 0, shape, item, monster, scroll, doors
 
   def randomRoom():
     print('testing')
@@ -126,14 +141,14 @@ def gameStart() :
   print(startMessage)
   # create player
   player = Player('Kargunt')
+  # the * lets us expand the list of variables 
+  playerWeapon = Weapon(*Weapon.randomWeapon())
+  startingRoom = Room(*Room.entrance())
+  # print start details
   print('Your name is Kargrunt. You begin with',player.hitPoints,'hit points (hp)\nand',player.silver,'silver. You may carry unlimited items.')
-  playerWeapon = Weapon.randomWeapon()
-  player_weapon = Weapon(playerWeapon[0], playerWeapon[1], playerWeapon[2], playerWeapon[3])
-  print('\nYour weapon is a',player_weapon.name, ', it attacks with a +', player_weapon.attackBonus,'and deals d',player_weapon.damageDie,'damage')
-  startingRoom = Room.entrance() 
-  starting_room = Room(startingRoom[0],startingRoom[1],startingRoom[2],startingRoom[3],startingRoom[4],startingRoom[5],startingRoom[6]) 
-  print(starting_room.entranceDescription())
- 
+  print('\nYour weapon is a',playerWeapon.name, ', it attacks with a +', playerWeapon.attackBonus,'and deals d',playerWeapon.damageDie,'damage')
+  print(startingRoom.entranceDescription())
+  return player, playerWeapon, startingRoom
  
 
 def diceRoll(dieCount,dieSides):
@@ -144,5 +159,61 @@ def diceRoll(dieCount,dieSides):
     dieVal = random.randint(min,max)
     dieTotal += dieVal
   return(dieTotal)
+
+
+def menu(key):
+  if key == chr(27):
+    clear()
+    quitYes = input('Do you really want to quit? ')
+    if quitYes in yesses:
+      exit()
+    else:
+      status = 'Congratulations, you are no coward!'
+  return status
+
+def movement(direction, player):
+  print('in movement', direction)
+  # move north
+  if direction == 'w':
+    print('move north')
+    player.yPos += 1
+    status = 'Moved North'
+  # move south
+  if direction == 's':
+    player.yPos -= 1
+    status = 'Moved South'
+  # move east
+  if direction == 'd':
+    player.xPos += 1
+    status = 'Moved East'
+  elif direction == 'd':
+    player.xPos += 1
+    status = 'Moved South East'
+  # move west
+  if direction == 'a':
+    player.xPos -= 1
+    status = 'Moved West'
+  coordinates = str(player.xPos) + ',' + str(player.yPos)
+  status = status + ' : ' + coordinates
+  return status, player
+
+def spells(spellNum):
+  if spellNum == '1':
+    print('CAST MAGIC MISSILE')
+
+def playerInput(player):
+  playerKey = getch.getch()
+  actions = {
+    menu : { chr(27), chr(28) },
+    movement : { 'w','a','s','d' },
+    spells : {'1','2' }
+  }
+  for actionType in actions:
+    for key in actions[actionType]:
+      if playerKey == key:
+        status = actionType(key, player)
+      #else:
+      #  status = 'not a valid key'
+  return status, player
 
 main()
