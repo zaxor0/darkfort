@@ -52,23 +52,37 @@ doorPosition = [ 'north', 'south', 'east', 'west' ]
 
 roomTable = [ 'nothing', 'pit trap', 'riddling soothsayer', 'weak monster', 'tough monster', 'peddler from beyond the void' ]
 
+roomType = [
+  'armory','chapel','blacksmith','kitchen','altar room',
+  'throne room','treasury','garbage pit','baths','library',
+  'study','temple','shrine','quarters','barracks',
+  'granary','great hall','chambers','well room','bedchamber',
+  'workshop','commandant quarters','torture chamber','prison','cell block']
+
+roomDescriptor = [
+  'decrepit','foul','revered','unholy','filthy',
+  'putrid','horrid','monstrous','stinking','vile',
+  'disgraceful','contemptible','unworthy','detestable','ignoble',
+  'blessed','divine','hallowed','revered','holy',
+  'sacred','profane','exalted','grimy','nasty']
+
 # MAIN FUNCTION
 def main() :
   player, playerWeapon, room = gameStart()
+  roomsExplored.append(room)
   roomCount = 0
-  print('starting room',room,'count',roomCount)
   while True:
-    #clear()
-    print("----------")
-    print('next room',room,'count',roomCount)
-    print(room.doorPlacement)
+    clear()
+    print('\n DARK FORT\n')
+    printRoom(room)
+    print('You have entered room',room.roomName,'you encounter a',room.encounter,'\nthere are doors to the',room.doorPlacement)
     print(player.name,':','HP:',player.hitPoints,'| Coordinates:',player.xPos, player.yPos)
     player, room = playerInput(player, room)
     if room not in roomsExplored:
       roomsExplored.append(room)
       roomCount += 1
     else:
-      print('returning to a room you have visited',room.xPos, room.yPos)
+      print('...returning to a room you have visited')
 
 # standard weapon stats
 class Player:
@@ -99,18 +113,45 @@ class Weapon:
     weaponAttacks = startingWeapons[weaponName]['attackBonus']
     return weaponName, weaponDamageDie, weaponDamageBonus, weaponAttacks
 
+class encounter():
+  def __init__(self, name):
+    self.name = name
+  #if entranceResult == 'item':
+  #  itemRoll = int(diceRoll(1,6) - 1)
+  #  item = sorted(items)[itemRoll]
+  #  if item == 'Weapon': 
+  #     item = Weapon.randomWeapon()[0]
+  #if entranceResult == 'monster':
+  #  monsterRoll = int(diceRoll(1,4) - 1)
+  #  monster = sorted(weakMonsters)[monsterRoll]
+  #if entranceResult == 'scroll':
+  #  scrollRoll = int(diceRoll(1,4) - 1)
+  #  scroll = sorted(scrolls)[scrollRoll]
+#
+#  def entranceDescription(self):
+#    message = '\nFrom the southern door, you enter a ' + self.shape + ' room with ' + self.doors
+#    if self.scroll:
+#      message = message + ' and a dying mystic gives you a scroll of ' + self.scroll
+#    elif self.item:
+#      message = message + ' and a' + self.item + ' lays on the floor'
+#    elif self.monster:
+#      message = message + ' and here a ' + self.monster + ' stands guard, it attacks!'
+#    else:
+#      message = message + ' and the room is quite empty.'
+#    return message
+
+
 
 class Room:
-  def __init__(self, roomNumber, xPos, yPos, shape, item, monster, scroll, doors, doorPlacement):
+  def __init__(self, roomNumber, roomName, xPos, yPos, shape, doors, doorPlacement, encounter):
     self.roomNumber = roomNumber
+    self.roomName = roomName
     self.xPos = xPos
     self.yPos = yPos
     self.shape = shape
-    self.item = item
-    self.monster = monster
-    self.scroll = scroll
     self.doors = doors
     self.doorPlacement = doorPlacement
+    self.encounter = encounter
 
   def doorPlacements(doors, oppositeDoor):
     numDoors = 0
@@ -129,46 +170,20 @@ class Room:
           sides.append(directions[position])
     return sides
 
-  def entranceDescription(self):
-    message = '\nFrom the southern door, you enter a ' + self.shape + ' room with ' + self.doors
-    if self.scroll:
-      message = message + ' and a dying mystic gives you a scroll of ' + self.scroll
-    elif self.item:
-      message = message + ' and a' + self.item + ' lays on the floor'
-    elif self.monster:
-      message = message + ' and here a ' + self.monster + ' stands guard, it attacks!'
-    else:
-      message = message + ' and the room is quite empty.'
-    return message
-
   def entrance():
     entranceContents = ['item','monster','scroll','empty']
     roomNumber = 1
     xPos = 0
     yPos = 0
-    item = ''
-    monster = ''
-    scroll = ''
     doors = doorCount[diceRoll(1,4)]
     oppositeDoor = 'south'
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
     shape = roomShapes[diceRoll(2, 6)]
-    contentsRoll = int(diceRoll(1, 4) - 1)
-    entranceResult = entranceContents[contentsRoll]
-    if entranceResult == 'item':
-      itemRoll = int(diceRoll(1,6) - 1)
-      item = sorted(items)[itemRoll]
-      if item == 'Weapon': 
-         item = Weapon.randomWeapon()[0]
-    if entranceResult == 'monster':
-      monsterRoll = int(diceRoll(1,4) - 1)
-      monster = sorted(weakMonsters)[monsterRoll]
-    if entranceResult == 'scroll':
-      scrollRoll = int(diceRoll(1,4) - 1)
-      scroll = sorted(scrolls)[scrollRoll]
-    return 1, 0, 0, shape, item, monster, scroll, doors, doorPlacement
+    encounter = entranceContents[int(diceRoll(1, 4) - 1)]
+    return 1, '"dark fort entrance"', 0, 0, shape, doors, doorPlacement, encounter 
 
   def randomRoom(player, oppositeDoor):
+    roomName = str('"' + roomDescriptor[diceRoll(1,25) - 1] + ' ' + roomType[diceRoll(1,25) - 1] + '"')
     xPos = player.xPos
     yPos = player.yPos
     item = ''
@@ -177,9 +192,10 @@ class Room:
     doors = doorCount[diceRoll(1,4)]
     shape = roomShapes[diceRoll(2, 6)]
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
-    roomFeature = roomTable[diceRoll(1,6 -1)]
-    print(xPos, yPos, shape, item, monster, scroll, doors, doorPlacement)
-    return 2, xPos, yPos, shape, item, monster, scroll, doors, doorPlacement
+    encounter = roomTable[diceRoll(1,6 - 1)]
+    return 2, roomName, xPos, yPos, shape, doors, doorPlacement, encounter
+
+  # need to add a function that if two rooms are newly connected its considered a secret door
 
 def gameStart() : 
   # starting screen
@@ -192,9 +208,24 @@ def gameStart() :
   # print start details
   print('Your name is Kargrunt. You begin with',player.hitPoints,'hit points (hp)\nand',player.silver,'silver. You may carry unlimited items.')
   print('\nYour weapon is a',playerWeapon.name, ', it attacks with a +', playerWeapon.attackBonus,'and deals d',playerWeapon.damageDie,'damage')
-  print(startingRoom.entranceDescription())
   return player, playerWeapon, startingRoom
  
+def printRoom(room):
+  top="\n  +----------+ "
+  mid="\n  |          | \n  |          | \n  |          | "
+  btm="\n  +----------+ \n"
+  if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+    mid="\n  |          | \n  |          [] \n  |          | "
+  if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+    mid="\n  |          | \n []          | \n  |          | "
+  if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+    mid="\n  |          | \n []          [] \n  |          | "
+  if 'north' in room.doorPlacement:
+    top="\n  +---[--]---+ "
+  if 'south' in room.doorPlacement:
+    btm="\n  +---[--]---+ \n"
+  printedRoom = top + mid + btm
+  print(printedRoom)
 
 def diceRoll(dieCount,dieSides):
   dieTotal = 0
@@ -235,14 +266,19 @@ def movement(direction, player, room):
   if not moved:
     print('there is no door in that direction')
     print(room.doorPlacement)
+  # after a logical movement / move through a door that exists
   elif moved:
     explored = False
+    # check to see if the new X Y coordinates match those of an existing room
     for oldRoom in roomsExplored:
+      # if the coordinates match an existing room, load up that room instead of creating a new one
       if oldRoom.xPos == player.xPos and oldRoom.yPos == player.yPos:
         explored = True
         nextRoom = oldRoom
+    # loading "nextRoom" which is a previously explored room
     if explored == True:
       room = nextRoom
+    # else, just make a whole new room
     else:
       room = Room(*Room.randomRoom(player, oppositeDoor))
   return player, room
