@@ -3,6 +3,7 @@
 import getch
 import os
 import random
+import sys
 import textwrap
 import time
 
@@ -38,7 +39,7 @@ weakMonsters = {
   'BLOOD-DRENCHED SKELETON' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'dagger', 'lootChance' : 2 },
   'CATACOMB CULTIST' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'scroll', 'lootChance' : 2},
   'GOBLIN' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 5, 'loot' : 'rope', 'lootChance' : 2},
-  'UNDEAD HOUND' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6, 'loot' : 'none'}
+  'UNDEAD HOUND' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6, 'loot' : 'none', 'lootChance' : 0 }
   }
 
 roomShapes = [ 
@@ -73,10 +74,11 @@ def main() :
   roomCount = 0
   while True:
     clear()
-    print('\n DARK FORT\n')
+    print(' ###  DARK FORT ### \n')
+    print(player.name,' : ',' HP: ',player.hitPoints,' | Coordinates: ',player.xPos, player.yPos,'\n')
+    slowPrint('You have entered a ',room.shape,' shaped room ',room.roomName,' you encounter a ',room.encounter,' \nthere are doors to the:')
+    print(room.doorPlacement)
     printRoom(room)
-    print('You have entered room',room.roomName,'you encounter a',room.encounter,'\nthere are doors to the',room.doorPlacement)
-    print(player.name,':','HP:',player.hitPoints,'| Coordinates:',player.xPos, player.yPos)
     player, room = playerInput(player, room)
     if room not in roomsExplored:
       roomsExplored.append(room)
@@ -113,34 +115,20 @@ class Weapon:
     weaponAttacks = startingWeapons[weaponName]['attackBonus']
     return weaponName, weaponDamageDie, weaponDamageBonus, weaponAttacks
 
-class encounter():
-  def __init__(self, name):
+class Monster:
+  #weakMonsters = {
+  #  'BLOOD-DRENCHED SKELETON' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'dagger', 'lootChance' : 2 },
+  #  'CATACOMB CULTIST' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'scroll', 'lootChance' : 2},
+  #  'GOBLIN' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 5, 'loot' : 'rope', 'lootChance' : 2},
+  #  'UNDEAD HOUND' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6, 'loot' : 'none'}
+  #  }
+  def __init__(self, name, points, damageDie, hp, loot, lootChance):
     self.name = name
-  #if entranceResult == 'item':
-  #  itemRoll = int(diceRoll(1,6) - 1)
-  #  item = sorted(items)[itemRoll]
-  #  if item == 'Weapon': 
-  #     item = Weapon.randomWeapon()[0]
-  #if entranceResult == 'monster':
-  #  monsterRoll = int(diceRoll(1,4) - 1)
-  #  monster = sorted(weakMonsters)[monsterRoll]
-  #if entranceResult == 'scroll':
-  #  scrollRoll = int(diceRoll(1,4) - 1)
-  #  scroll = sorted(scrolls)[scrollRoll]
-#
-#  def entranceDescription(self):
-#    message = '\nFrom the southern door, you enter a ' + self.shape + ' room with ' + self.doors
-#    if self.scroll:
-#      message = message + ' and a dying mystic gives you a scroll of ' + self.scroll
-#    elif self.item:
-#      message = message + ' and a' + self.item + ' lays on the floor'
-#    elif self.monster:
-#      message = message + ' and here a ' + self.monster + ' stands guard, it attacks!'
-#    else:
-#      message = message + ' and the room is quite empty.'
-#    return message
-
-
+    self.points = points
+    self.damageDie = damageDie
+    self.hp = hp
+    self.loot = loot
+    self.lootChance = lootChance
 
 class Room:
   def __init__(self, roomNumber, roomName, xPos, yPos, shape, doors, doorPlacement, encounter):
@@ -192,8 +180,19 @@ class Room:
     doors = doorCount[diceRoll(1,4)]
     shape = roomShapes[diceRoll(2, 6) - 1]
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
-    encounter = roomTable[diceRoll(1,6 - 1)]
+    encounter = Room.encounterSelect() 
     return 2, roomName, xPos, yPos, shape, doors, doorPlacement, encounter
+  
+  def encounterSelect():
+    encounter = roomTable[diceRoll(1,6 - 1)]
+    if encounter == 'weak monster':
+      monsterRoll = diceRoll(1,4) - 1 
+      monster = sorted(weakMonsters)[monsterRoll]
+      monster = Monster(monster, monster['points'],monster['dmgDie'],monster['hp'],monster['loot'],monster['lootChance'])
+      return monster
+    else:
+      return encounter
+
 
   # need to add a function that if two rooms are newly connected its considered a secret door
 
@@ -258,7 +257,7 @@ def printRoom(room):
   elif room.shape == 'triangular': 
     top="\n       +----+ \n       /    \ "
     mid="\n      /      \ \n     /        \  \n    /          \ "
-    btm="\n   /          \ \n  +------------+ \n"
+    btm="\n   /            \ \n  +--------------+ \n"
     if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
       mid="\n      /      \ \n     /        []  \n    /          \ "
     if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
@@ -269,6 +268,20 @@ def printRoom(room):
       top="\n       +[--]+ \n       /    \ "
     if 'south' in room.doorPlacement:
       btm="\n   /            \ \n  +-----[--]-----+ \n"
+  elif room.shape == 'oval': 
+    top="\n     +----------+ \n    /            \ "
+    mid="\n   |              | " 
+    btm="\n    \            / \n     +----------+  \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n   |             [] " 
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n   []             | " 
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n   []            [] " 
+    if 'north' in room.doorPlacement:
+      top="\n     +---[--]---+ \n    /            \ "
+    if 'south' in room.doorPlacement:
+      btm="\n    \            / \n     +---[--]---+  \n"
   else:
     top="\n  +----------+ "
     mid="\n  |          | \n  |          | \n  |          | "
@@ -284,7 +297,7 @@ def printRoom(room):
     if 'south' in room.doorPlacement:
       btm="\n  +---[--]---+ \n"
   printedRoom = top + mid + btm
-  print(printedRoom)
+  slowPrint(printedRoom)
 
 def diceRoll(dieCount,dieSides):
   dieTotal = 0
@@ -374,5 +387,13 @@ def playerInput(player, room):
   else:
     player, room = playerAction(playerKey, player, room)
   return player, room
+
+# slow printing function, like Alien (1979)
+def slowPrint(*text):
+  for word in text:
+    for letter in word:
+      sys.stdout.write(letter)
+      sys.stdout.flush()
+      time.sleep(.02)
 
 main()
