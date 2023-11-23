@@ -178,7 +178,7 @@ class Room:
     doors = doorCount[diceRoll(1,4)]
     oppositeDoor = 'south'
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
-    shape = roomShapes[diceRoll(2, 6)]
+    shape = roomShapes[diceRoll(2, 6) - 1]
     encounter = entranceContents[int(diceRoll(1, 4) - 1)]
     return 1, '"dark fort entrance"', 0, 0, shape, doors, doorPlacement, encounter 
 
@@ -190,7 +190,7 @@ class Room:
     monster = ''
     scroll = ''
     doors = doorCount[diceRoll(1,4)]
-    shape = roomShapes[diceRoll(2, 6)]
+    shape = roomShapes[diceRoll(2, 6) - 1]
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
     encounter = roomTable[diceRoll(1,6 - 1)]
     return 2, roomName, xPos, yPos, shape, doors, doorPlacement, encounter
@@ -211,19 +211,78 @@ def gameStart() :
   return player, playerWeapon, startingRoom
  
 def printRoom(room):
-  top="\n  +----------+ "
-  mid="\n  |          | \n  |          | \n  |          | "
-  btm="\n  +----------+ \n"
-  if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
-    mid="\n  |          | \n  |          [] \n  |          | "
-  if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
-    mid="\n  |          | \n []          | \n  |          | "
-  if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
-    mid="\n  |          | \n []          [] \n  |          | "
-  if 'north' in room.doorPlacement:
-    top="\n  +---[--]---+ "
-  if 'south' in room.doorPlacement:
-    btm="\n  +---[--]---+ \n"
+  # room shapes 
+  # irregular cave oval cross-shaped corridor square round rectangular triangular skull-shaped
+  if room.shape == 'corridor': 
+    top="\n\n  +------------+ "
+    mid="\n  |            | "
+    btm="\n  +------------+ \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n  |            [] "
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n []            |  "
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n []            [] "
+    if 'north' in room.doorPlacement:
+      top="\n  +----[--]----+ "
+    if 'south' in room.doorPlacement:
+      btm="\n  +----[--]----+ \n\n"
+  elif room.shape == 'rectangular': 
+    top="\n  +----------------+ "
+    mid="\n  |                | \n  |                | \n  |                | "
+    btm="\n  +----------------+ \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n  |                | \n  |                [] \n  |                | "
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n  |                | \n []                | \n  |                | "
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n  |                | \n []                [] \n  |                | "
+    if 'north' in room.doorPlacement:
+      top="\n  +------[--]------+ "
+    if 'south' in room.doorPlacement:
+      btm="\n  +------[--]------+ \n"
+  elif room.shape == 'cross-shaped': 
+    top="\n        +------+\n        |      |\n        |      |"
+    mid="\n  +-----+      +-----+\n  |                  |\n  |                  |\n  |                  |\n  +-----+      +-----+ "
+    btm="\n        |      |\n        |      |\n        +------+ \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n  +-----+      +-----+\n  |                  |\n  |                  []\n  |                  |\n  +-----+      +-----+ "
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n  +-----+      +-----+\n  |                  |\n []                  |\n  |                  |\n  +-----+      +-----+ "
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n  +-----+      +-----+\n  |                  |\n []                  []\n  |                  |\n  +-----+      +-----+ "
+    if 'north' in room.doorPlacement:
+      top="\n        +-[--]-+\n        |      |\n        |      |"
+    if 'south' in room.doorPlacement:
+      btm="\n        |      |\n        |      |\n        +-[--]-+ \n"
+  elif room.shape == 'triangular': 
+    top="\n       +----+ \n       /    \ "
+    mid="\n      /      \ \n     /        \  \n    /          \ "
+    btm="\n   /          \ \n  +------------+ \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n      /      \ \n     /        []  \n    /          \ "
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n      /      \ \n    []        \  \n    /          \ "
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n      /      \ \n    []        [] \n    /          \ "
+    if 'north' in room.doorPlacement:
+      top="\n       +[--]+ \n       /    \ "
+    if 'south' in room.doorPlacement:
+      btm="\n   /            \ \n  +-----[--]-----+ \n"
+  else:
+    top="\n  +----------+ "
+    mid="\n  |          | \n  |          | \n  |          | "
+    btm="\n  +----------+ \n"
+    if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
+      mid="\n  |          | \n  |          [] \n  |          | "
+    if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
+      mid="\n  |          | \n []          | \n  |          | "
+    if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
+      mid="\n  |          | \n []          [] \n  |          | "
+    if 'north' in room.doorPlacement:
+      top="\n  +---[--]---+ "
+    if 'south' in room.doorPlacement:
+      btm="\n  +---[--]---+ \n"
   printedRoom = top + mid + btm
   print(printedRoom)
 
