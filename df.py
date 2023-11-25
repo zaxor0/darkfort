@@ -36,10 +36,10 @@ items = [ 'weapon', 'potion', 'rope', 'scroll', 'armor', 'cloak' ]
 scrolls = [ 'Summon weak daemon', 'Palms Open the Southern Gate', 'Aegis of Sorrow', 'False Omen' ]
 
 weakMonsters = {
-  'BLOOD-DRENCHED SKELETON' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'dagger', 'lootChance' : 2 },
-  'CATACOMB CULTIST' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'scroll', 'lootChance' : 2},
-  'GOBLIN' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 5, 'loot' : 'rope', 'lootChance' : 2},
-  'UNDEAD HOUND' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6, 'loot' : 'none', 'lootChance' : 0 }
+  'BLOOD-DRENCHED SKELETON' : { 'points' : 3, 'dmgDie' : 4, 'hp' : 6 , 'loot' : 'dagger', 'lootChance' : 6 },
+  'CATACOMB CULTIST' : { 'points' : 3, 'dmgDie' : 4, 'hp' : 6 , 'loot' : 'scroll', 'lootChance' : 2 },
+  'GOBLIN' : { 'points' : 3, 'dmgDie' : 4, 'hp' : 5, 'loot' : 'rope', 'lootChance' : 2 },
+  'UNDEAD HOUND' : { 'points' : 3, 'dmgDie' : 4, 'hp' : 6, 'loot' : 'none', 'lootChance' : 0 }
   }
 
 roomShapes = [ 
@@ -51,7 +51,9 @@ doorCount = [ 'no doors, a dead end', 'one door', 'two doors', 'two doors', 'thr
 
 doorPosition = [ 'north', 'south', 'east', 'west' ]
 
-roomTable = [ 'nothing', 'pit trap', 'riddling soothsayer', 'weak monster', 'tough monster', 'peddler from beyond the void' ]
+entranceEncounters = ['item','weak monster','scroll','empty']
+
+roomEncounters = [ 'nothing', 'pit trap', 'riddling soothsayer', 'weak monster', 'tough monster', 'peddler from beyond the void' ]
 
 roomType = [
   'armory','chapel','blacksmith','kitchen','altar room',
@@ -69,14 +71,18 @@ roomDescriptor = [
 
 # MAIN FUNCTION
 def main() :
+  clear()
   player, playerWeapon, room = gameStart()
   roomsExplored.append(room)
   roomCount = 0
+  print('\n...press any key to continue...')
+  anyKey = getch.getch()
   while True:
     clear()
     print(' ###  DARK FORT ### \n')
     print(player.name,' : ',' HP: ',player.hitPoints,' | Coordinates: ',player.xPos, player.yPos,'\n')
-    slowPrint('You have entered a ',room.shape,' shaped room ',room.roomName,' you encounter a ',room.encounter,' \nthere are doors to the:')
+    slowPrint('You enter a ',room.shape,' shaped room ',room.roomName,'\n')
+    slowPrint('You encounter a ',str(room.encounter),' \nthere are doors to the:')
     print(room.doorPlacement)
     printRoom(room)
     player, room = playerInput(player, room)
@@ -115,6 +121,33 @@ class Weapon:
     weaponAttacks = startingWeapons[weaponName]['attackBonus']
     return weaponName, weaponDamageDie, weaponDamageBonus, weaponAttacks
 
+class encounter():
+  def __init__(self, name):
+    self.name = name
+  #if entranceResult == 'item':
+  #  itemRoll = int(diceRoll(1,6) - 1)
+  #  item = sorted(items)[itemRoll]
+  #  if item == 'Weapon': 
+  #     item = Weapon.randomWeapon()[0]
+  #if entranceResult == 'monster':
+  #  monsterRoll = int(diceRoll(1,4) - 1)
+  #  monster = sorted(weakMonsters)[monsterRoll]
+  #if entranceResult == 'scroll':
+  #  scrollRoll = int(diceRoll(1,4) - 1)
+  #  scroll = sorted(scrolls)[scrollRoll]
+#
+#  def entranceDescription(self):
+#    message = '\nFrom the southern door, you enter a ' + self.shape + ' room with ' + self.doors
+#    if self.scroll:
+#      message = message + ' and a dying mystic gives you a scroll of ' + self.scroll
+#    elif self.item:
+#      message = message + ' and a' + self.item + ' lays on the floor'
+#    elif self.monster:
+#      message = message + ' and here a ' + self.monster + ' stands guard, it attacks!'
+#    else:
+#      message = message + ' and the room is quite empty.'
+#    return message
+
 class Monster:
   #weakMonsters = {
   #  'BLOOD-DRENCHED SKELETON' : { 'points' : 3, 'dmgDie' : '4', 'hp' : 6 , 'loot' : 'dagger', 'lootChance' : 2 },
@@ -131,8 +164,7 @@ class Monster:
     self.lootChance = lootChance
 
 class Room:
-  def __init__(self, roomNumber, roomName, xPos, yPos, shape, doors, doorPlacement, encounter):
-    self.roomNumber = roomNumber
+  def __init__(self, roomName, xPos, yPos, shape, doors, doorPlacement, encounter):
     self.roomName = roomName
     self.xPos = xPos
     self.yPos = yPos
@@ -158,37 +190,31 @@ class Room:
           sides.append(directions[position])
     return sides
 
-  def entrance():
-    entranceContents = ['item','monster','scroll','empty']
-    roomNumber = 1
-    xPos = 0
-    yPos = 0
-    doors = doorCount[diceRoll(1,4)]
-    oppositeDoor = 'south'
-    doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
-    shape = roomShapes[diceRoll(2, 6) - 1]
-    encounter = entranceContents[int(diceRoll(1, 4) - 1)]
-    return 1, '"dark fort entrance"', 0, 0, shape, doors, doorPlacement, encounter 
-
   def randomRoom(player, oppositeDoor):
-    roomName = str('"' + roomDescriptor[diceRoll(1,25) - 1] + ' ' + roomType[diceRoll(1,25) - 1] + '"')
     xPos = player.xPos
     yPos = player.yPos
-    item = ''
-    monster = ''
-    scroll = ''
+    # if entrance at 0,0
+    if xPos == 0 and yPos == 0:
+      roomName = '"dark fort entrance"'
+      encounter = entranceEncounters[int(diceRoll(1, 4) - 1)]
+      shape = 'square'
+    # if other rooms
+    else:
+      roomName = str('"' + roomDescriptor[diceRoll(1,25) - 1] + ' ' + roomType[diceRoll(1,25) - 1] + '"')
+      encounter = roomEncounters[diceRoll(1,6 - 1)]
+      shape = roomShapes[diceRoll(2, 6) - 1]
+    encounter = Room.encounterSelect(encounter)
     doors = doorCount[diceRoll(1,4)]
-    shape = roomShapes[diceRoll(2, 6) - 1]
     doorPlacement = Room.doorPlacements(doors, oppositeDoor) 
-    encounter = Room.encounterSelect() 
-    return 2, roomName, xPos, yPos, shape, doors, doorPlacement, encounter
-  
-  def encounterSelect():
-    encounter = roomTable[diceRoll(1,6 - 1)]
+    #encounter = Room.encounterSelect() 
+    return roomName, xPos, yPos, shape, doors, doorPlacement, encounter
+
+  def encounterSelect(encounter):
     if encounter == 'weak monster':
       monsterRoll = diceRoll(1,4) - 1 
       monster = sorted(weakMonsters)[monsterRoll]
-      monster = Monster(monster, monster['points'],monster['dmgDie'],monster['hp'],monster['loot'],monster['lootChance'])
+#      monster = Monster(monster, weakMonsters[monster]['points'],weakMonsters[monster]['dmgDie'],weakMonsters[monster]['hp'],weakMonsters[monster]['loot'],weakMonsters[monster]['lootChance'])
+      monster = Monster(monster,*weakMonsters[monster].values())
       return monster
     else:
       return encounter
@@ -198,15 +224,16 @@ class Room:
 
 def gameStart() : 
   # starting screen
-  print(startMessage)
+  slowPrint(startMessage)
   # create player
   player = Player('Kargunt')
   # the * lets us expand the list of variables 
   playerWeapon = Weapon(*Weapon.randomWeapon())
-  startingRoom = Room(*Room.entrance())
+  # create entrance room
+  startingRoom = Room(*Room.randomRoom(player, 'south'))
   # print start details
-  print('Your name is Kargrunt. You begin with',player.hitPoints,'hit points (hp)\nand',player.silver,'silver. You may carry unlimited items.')
-  print('\nYour weapon is a',playerWeapon.name, ', it attacks with a +', playerWeapon.attackBonus,'and deals d',playerWeapon.damageDie,'damage')
+  slowPrint('Your name is Kargrunt. You begin with ',str(player.hitPoints),' hit points (hp)\nand ',str(player.silver),' silver. You may carry unlimited items.')
+  slowPrint('\nYour weapon is a ',str(playerWeapon.name), ', it attacks with a +', str(playerWeapon.attackBonus),' and deals d',str(playerWeapon.damageDie),' damage')
   return player, playerWeapon, startingRoom
  
 def printRoom(room):
@@ -214,14 +241,14 @@ def printRoom(room):
   # irregular cave oval cross-shaped corridor square round rectangular triangular skull-shaped
   if room.shape == 'corridor': 
     top="\n\n  +------------+ "
-    mid="\n  |            | "
+    mid="\n  |............| "
     btm="\n  +------------+ \n"
     if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
-      mid="\n  |            [] "
+      mid="\n  |............[] "
     if 'west' in room.doorPlacement and not 'east' in room.doorPlacement:
-      mid="\n []            |  "
+      mid="\n []............|  "
     if 'west' in room.doorPlacement and 'east' in room.doorPlacement:
-      mid="\n []            [] "
+      mid="\n []............[] "
     if 'north' in room.doorPlacement:
       top="\n  +----[--]----+ "
     if 'south' in room.doorPlacement:
@@ -284,7 +311,7 @@ def printRoom(room):
       btm="\n    \            / \n     +---[--]---+  \n"
   else:
     top="\n  +----------+ "
-    mid="\n  |          | \n  |          | \n  |          | "
+    mid="\n  |..........| \n  |..........| \n  |..........| "
     btm="\n  +----------+ \n"
     if 'east' in room.doorPlacement and not 'west' in room.doorPlacement:
       mid="\n  |          | \n  |          [] \n  |          | "
@@ -308,14 +335,14 @@ def diceRoll(dieCount,dieSides):
     dieTotal += dieVal
   return(dieTotal)
 
-def menu(key, player):
+def menu(key, player, room):
   if key == chr(27):
     quitYes = input('\nDo you really want to quit? ')
     if quitYes in yesses:
       exit()
     else:
       print('Congratulations, you are no coward!')
-  return player
+  return player, room
 
 def movement(direction, player, room):
   moved = False
